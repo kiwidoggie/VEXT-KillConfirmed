@@ -121,10 +121,24 @@ function KillConfirmedServer:OnServerTick()
             -- Broadcast out to all clients to remove the tag
             NetEvents:Broadcast("KC:RemoveTag", l_Tag:GetIdentifier())
 
-            -- Increment the ticket count by one
-            ticketCount = TicketManager:GetTicketCount(l_Player.teamId)
-            ticketCount = ticketCount + 1
-            TicketManager:SetTicketCount(l_Player.teamId, ticketCount)
+            -- Enemy team collection
+            if l_Tag:GetTeamId() ~= l_Player.teamId then
+                -- Increment the ticket count by one
+                ticketCount = TicketManager:GetTicketCount(l_Player.teamId)
+                ticketCount = ticketCount + 1
+                TicketManager:SetTicketCount(l_Player.teamId, ticketCount)
+            else
+                -- Decrement the ticket count by one (same team recovery)
+                ticketCount = TicketManager:GetTicketCount(l_Player.teamId)
+
+                -- Don't allow players to go negative ticket count
+                if ticketCount == 0 then
+                    goto int_continue
+                end
+
+                ticketCount = ticketCount - 1
+                TicketManager:SetTicketCount(l_Player.teamId, ticketCount)
+            end
 
             ::int_continue::
         end
