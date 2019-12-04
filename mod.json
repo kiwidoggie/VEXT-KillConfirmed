@@ -1,0 +1,9 @@
+{
+	"Name": "killconfirmed",
+	"Authors": ["kiwidog"],
+	"Description": "CoD Kill Confirmed ported to Venice Unleashed",
+	"URL": "none",
+	"Version": "1",
+	"HasWebUI": false,
+	"HasVeniceEXT": true
+}
