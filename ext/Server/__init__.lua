@@ -16,7 +16,7 @@ function KillConfirmedServer:__init()
     self.m_UpdateFreq = 0.15
 
     -- Box size in game units
-    self.m_BoxSize = 1.5
+    self.m_BoxSize = 10
 
     -- Array of tags
     self.m_CurrentTags = { }
@@ -41,7 +41,7 @@ function KillConfirmedServer:OnPlayerKilled(player, inflictor, position, weapon,
 
     -- Create a new tag and add it to the list
     identifier = self.m_IdentifierCounter
-    tag = KillConfirmedTag(spawnPosition, teamId, identifier)
+    tag = KillConfirmedTag(spawnPosition, teamId, identifier, nil)
 
     table.insert(self.m_CurrentTags, tag)
 
@@ -52,7 +52,7 @@ function KillConfirmedServer:OnPlayerKilled(player, inflictor, position, weapon,
 end
 
 -- IsPlayerInBounds(ServerPlayer player, Vec3 position, number size)
-function KillConfirmedServer:IsPlayerInBounds(player, position, size)
+local function IsPlayerInBounds(player, position, size)
     if player == nil then
         return false
     end
@@ -74,6 +74,13 @@ function KillConfirmedServer:IsPlayerInBounds(player, position, size)
 
     local playerPosition = soldier.worldTransform.trans
 
+    print("x: " .. playerPosition.x .. " y: " .. playerPosition.y .. " z: " .. playerPosition.z)
+    print("size: " .. size)
+
+    -- Why is position fucked up, erroring on position.z ???
+    print("x: " .. position.x .. " y: " .. position.y .. " z: " .. position.z)
+
+    -- Crashes here
     local minPosition = Vec3(position.x - size, position.y - size, position.z - size)
     local maxPosition = Vec3(position.x + size, position.y + size, position.z + size)
 
@@ -107,19 +114,21 @@ function KillConfirmedServer:OnServerTick()
             goto continue
         end
         
+        for l_Index, l_TagInstance in ipairs(self.m_CurrentTags) do
+            local l_Tag = KillConfirmedTag(l_TagInstance)
+            if l_Tag.m_Position == nil then
+                print("Position is nil")
+            end
 
-        local l_RemoveIndicies = { }
-
-        for l_Index, l_Tag in pairs(self.m_CurrentTags) do
-            if self:IsPlayerInBounds(l_Player, l_Tag:GetPosition(), l_Tag:GetTeamId()) == false then
+            if IsPlayerInBounds(l_Player, l_Tag.m_Position, self.m_BoxSize) == false then
                 goto int_continue
             end
 
-            -- Add this tag index for removabl for later (if we do this in the loop shit gets all fucked up)
-            table.insert(l_RemoveIndicies, l_Index)
-
             -- Broadcast out to all clients to remove the tag
-            NetEvents:Broadcast("KC:RemoveTag", l_Tag:GetIdentifier())
+            local l_Identifier = l_Tag:GetIdentifier()
+            print("l_Identifier: " .. l_Identifier)
+
+            NetEvents:Broadcast("KC:RemoveTag", l_Identifier)
 
             -- Enemy team collection
             if l_Tag:GetTeamId() ~= l_Player.teamId then
@@ -141,11 +150,6 @@ function KillConfirmedServer:OnServerTick()
             end
 
             ::int_continue::
-        end
-
-        -- Remove all of the current tags bnased on index that have been "picked up"
-        for _, l_RemoveIndex in pairs(l_RemoveIndicies) do
-            table.remove(self.m_CurrentTags, l_RemoveIndex)
         end
 
         ::continue::
