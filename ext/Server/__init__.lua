@@ -171,7 +171,7 @@ function KillConfirmedServer:OnServerTick()
                 -- Increment the ticket count by one
                 ticketCount = TicketManager:GetTicketCount(l_Player.teamId)
                 print("currentTicketCount: " .. ticketCount)
-                ticketCount = ticketCount + 1
+                ticketCount = ticketCount + 1.0
                 TicketManager:SetTicketCount(l_Player.teamId, ticketCount)
 
                 ticketCount = TicketManager:GetTicketCount(l_Player.teamId)
@@ -185,7 +185,7 @@ function KillConfirmedServer:OnServerTick()
                     goto int_continue
                 end
 
-                ticketCount = ticketCount - 1
+                ticketCount = ticketCount - 1.0
                 TicketManager:SetTicketCount(l_Player.teamId, ticketCount)
             end
 

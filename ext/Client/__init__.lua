@@ -145,6 +145,10 @@ function KillConfirmedClient:OnRemoveTag(identifier)
     print("OnRemoveTag called ident: " .. identifier)
 
     for l_Index, l_Tag in ipairs(self.m_Tags) do
+        if l_Tag == nil then
+            goto continue
+        end
+        
         if l_Tag:GetIdentifier() ~= identifier then
             goto continue
         end
