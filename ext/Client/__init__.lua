@@ -31,6 +31,8 @@ function KillConfirmedClient:__init()
     self.m_DisableEffects = false
 
     self.m_Tags = { } 
+
+    self.m_Params = EffectParams()
 end
 
 function KillConfirmedClient:OnEngineUpdate(deltaTime, simulationDeltaTime)
@@ -46,7 +48,7 @@ end
 
 function KillConfirmedClient:CreateEffect()
     -- If we have already found our effects, don't do anything
-    if s_SmokeEffect ~= nil and s_FireEffect ~= nil then
+    if self.m_FriendlySmoke ~= nil and self.m_EnemyFire ~= nil then
         return true
     end
 
@@ -71,14 +73,13 @@ function KillConfirmedClient:CreateEffect()
     return true
 end
 
-function KillConfirmedClient:Delete(identifier)
-end
-
-function KillConfirmedClient:AddOrInsert()
-end
-
 function KillConfirmedClient:OnCreateTag(spawnPositionX, spawnPositionY, spawnPositionZ, teamId, identifier)
-    print("OnCreateTag called")
+    --print("OnCreateTag called")
+    --print("spawnPositionX: " .. type(spawnPositionX))
+    --print("spawnPositionY: " .. type(spawnPositionY))
+    --print("spawnPositionZ: " .. type(spawnPositionZ))
+    --print("teamId: " .. type(teamId))
+    --print("identifier: " .. type(identifier))
     
     -- Manual override for disabling effects
     if self.m_DisableEffects == true then
@@ -96,24 +97,24 @@ function KillConfirmedClient:OnCreateTag(spawnPositionX, spawnPositionY, spawnPo
         print("Could not get local player")
         return
     end
-    
+
     spawnPosition = Vec3(spawnPositionX, spawnPositionY, spawnPositionZ)
 
-    local s_TeamId = s_LocalPlayer.teamId
-    s_Params = EffectParams()
+    local s_PlayerTeamId = s_LocalPlayer.teamId
+    
     s_Transform = LinearTransform()
     s_Transform.trans = spawnPosition
 
-    if s_TeamId == teamId then
+    if s_PlayerTeamId == teamId then
         -- Handle creation of a friendly effect
-        s_EffectHandle = EffectManager:PlayEffect(self.m_FriendlySmoke, s_Transform, s_Params, true)
+        s_EffectHandle = EffectManager:PlayEffect(self.m_FriendlySmoke, s_Transform, self.m_Params, true)
         if EffectManager:IsEffectPlaying(s_EffectHandle) == false then
             print("friendly effect not playing")
             return
         end
     else
         -- Handle creation of an enemy effect
-        s_EffectHandle = EffectManager:PlayEffect(self.m_EnemyFire, s_Transform, s_Params, true)
+        s_EffectHandle = EffectManager:PlayEffect(self.m_EnemyFire, s_Transform, self.m_Params, true)
         if EffectManager:IsEffectPlaying(s_EffectHandle) == false then
             print("enemy effect not playing")
             return

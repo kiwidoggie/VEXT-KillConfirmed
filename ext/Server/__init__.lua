@@ -16,7 +16,7 @@ function KillConfirmedServer:__init()
     self.m_UpdateFreq = 0.15
 
     -- Box size in game units
-    self.m_BoxSize = 10
+    self.m_BoxSize = 1.5
 
     -- Array of tags
     self.m_CurrentTags = { }
@@ -41,9 +41,24 @@ function KillConfirmedServer:OnPlayerKilled(player, inflictor, position, weapon,
 
     -- Create a new tag and add it to the list
     identifier = self.m_IdentifierCounter
+    freeIndex = -1
     tag = KillConfirmedTag(spawnPosition, teamId, identifier, nil)
 
-    table.insert(self.m_CurrentTags, tag)
+    for l_Index, l_TagInstance in ipairs(self.m_CurrentTags) do
+        if l_TagInstance ~= nil then
+            goto killed_cont
+        end
+
+        freeIndex = l_Index
+        break
+
+        ::killed_cont::
+    end
+
+    -- If there was not any free space in the current array, insert into the end
+    if freeIndex == -1 then
+        table.insert(self.m_CurrentTags, tag)
+    end
 
     print("Added a new tag at location " .. spawnPosition.x .. " " .. spawnPosition.y .. " " .. spawnPosition.z)
 
@@ -52,13 +67,17 @@ function KillConfirmedServer:OnPlayerKilled(player, inflictor, position, weapon,
 end
 
 -- IsPlayerInBounds(ServerPlayer player, Vec3 position, number size)
-local function IsPlayerInBounds(player, positionX, positionY, positionZ, size)
+function KillConfirmedServer:IsPlayerInBounds(player, positionX, positionY, positionZ, size)
     if player == nil then
         return false
     end
 
-    local position = Vec3(positionX, positionY, positionZ)
+    --print("player: " .. type(player))
+    --print("x: " .. type(positionX))
+    --print("y: " .. type(positionY))
+    --print("z: " .. type(positionZ))
 
+    local position = Vec3(positionX, positionY, positionZ)
     if position == nil then
         print("why is position nil")
         return false
@@ -79,13 +98,14 @@ local function IsPlayerInBounds(player, positionX, positionY, positionZ, size)
         return false
     end
 
+    -- Get the player position
     local playerPosition = soldier.worldTransform.trans
 
-    print("x: " .. playerPosition.x .. " y: " .. playerPosition.y .. " z: " .. playerPosition.z)
-    print("size: " .. size)
+    --print("x: " .. playerPosition.x .. " y: " .. playerPosition.y .. " z: " .. playerPosition.z)
+    --print("size: " .. size)
 
     -- Why is position fucked up, erroring on position.z ???
-    print("x: " .. position.x .. " y: " .. position.y .. " z: " .. position.z)
+    --print("x: " .. position.x .. " y: " .. position.y .. " z: " .. position.z)
 
     -- Crashes here
     local minPosition = Vec3(position.x - size, position.y - size, position.z - size)
@@ -122,20 +142,27 @@ function KillConfirmedServer:OnServerTick()
         end
         
         for l_Index, l_TagInstance in ipairs(self.m_CurrentTags) do
-            local l_Tag = KillConfirmedTag(l_TagInstance)
-            local l_Pos = l_Tag:GetPosition()
+            -- Validate that we have a good tag instance
+            if l_TagInstance == nil then
+                goto int_continue
+            end
+
+            local l_Tag = l_TagInstance
+            local l_Pos = Vec3(l_Tag:GetPosition())
+            --print("l_Pos: " .. type(l_Pos))
+
             if l_Pos == nil then
                 print("Position is nil")
                 goto int_continue
             end
 
-            if IsPlayerInBounds(l_Player, l_Pos.x, l_Pos.y, l_Pos.z, self.m_BoxSize) == false then
+            if self:IsPlayerInBounds(l_Player, l_Pos.x, l_Pos.y, l_Pos.z, self.m_BoxSize) == false then
                 goto int_continue
             end
 
             -- Broadcast out to all clients to remove the tag
             local l_Identifier = l_Tag:GetIdentifier()
-            print("l_Identifier: " .. l_Identifier)
+            --print("l_Identifier: " .. l_Identifier)
 
             NetEvents:Broadcast("KC:RemoveTag", l_Identifier)
 
@@ -143,8 +170,12 @@ function KillConfirmedServer:OnServerTick()
             if l_Tag:GetTeamId() ~= l_Player.teamId then
                 -- Increment the ticket count by one
                 ticketCount = TicketManager:GetTicketCount(l_Player.teamId)
+                print("currentTicketCount: " .. ticketCount)
                 ticketCount = ticketCount + 1
                 TicketManager:SetTicketCount(l_Player.teamId, ticketCount)
+
+                ticketCount = TicketManager:GetTicketCount(l_Player.teamId)
+                print("newTicketCount: " .. ticketCount)
             else
                 -- Decrement the ticket count by one (same team recovery)
                 ticketCount = TicketManager:GetTicketCount(l_Player.teamId)
@@ -157,6 +188,8 @@ function KillConfirmedServer:OnServerTick()
                 ticketCount = ticketCount - 1
                 TicketManager:SetTicketCount(l_Player.teamId, ticketCount)
             end
+
+            self.m_CurrentTags[l_Index] = nil
 
             ::int_continue::
         end
