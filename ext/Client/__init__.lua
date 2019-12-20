@@ -77,7 +77,7 @@ end
 function KillConfirmedClient:AddOrInsert()
 end
 
-function KillConfirmedClient:OnCreateTag(spawnPosition, teamId, identifier)
+function KillConfirmedClient:OnCreateTag(spawnPositionX, spawnPositionY, spawnPositionZ, teamId, identifier)
     print("OnCreateTag called")
     
     -- Manual override for disabling effects
@@ -96,6 +96,8 @@ function KillConfirmedClient:OnCreateTag(spawnPosition, teamId, identifier)
         print("Could not get local player")
         return
     end
+    
+    spawnPosition = Vec3(spawnPositionX, spawnPositionY, spawnPositionZ)
 
     local s_TeamId = s_LocalPlayer.teamId
     s_Params = EffectParams()
@@ -118,7 +120,9 @@ function KillConfirmedClient:OnCreateTag(spawnPosition, teamId, identifier)
         end
     end
 
-    print("create tag " .. spawnPosition.x .. " " .. spawnPosition.y .. " " .. spawnPosition.z .. " teamId: " .. teamId .. " ident: " .. identifier .. " effectHandle: " .. s_EffectHandle)
+    
+
+    --print("create tag " .. spawnPositionX .. " " .. spawnPositionY .. " " .. spawnPositionZ .. " teamId: " .. teamId .. " ident: " .. identifier .. " effectHandle: ")
     s_CreatedTag = KillConfirmedTag(spawnPosition, teamId, identifier, s_EffectHandle)
     
     print("Created effect")

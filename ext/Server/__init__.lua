@@ -47,13 +47,20 @@ function KillConfirmedServer:OnPlayerKilled(player, inflictor, position, weapon,
 
     print("Added a new tag at location " .. spawnPosition.x .. " " .. spawnPosition.y .. " " .. spawnPosition.z)
 
-    NetEvents:Broadcast("KC:CreateTag", spawnPosition, teamId, identifier)
+    NetEvents:Broadcast("KC:CreateTag", spawnPosition.x, spawnPosition.y, spawnPosition.z, teamId, identifier)
     self.m_IdentifierCounter = self.m_IdentifierCounter + 1
 end
 
 -- IsPlayerInBounds(ServerPlayer player, Vec3 position, number size)
-local function IsPlayerInBounds(player, position, size)
+local function IsPlayerInBounds(player, positionX, positionY, positionZ, size)
     if player == nil then
+        return false
+    end
+
+    local position = Vec3(positionX, positionY, positionZ)
+
+    if position == nil then
+        print("why is position nil")
         return false
     end
 
@@ -116,11 +123,13 @@ function KillConfirmedServer:OnServerTick()
         
         for l_Index, l_TagInstance in ipairs(self.m_CurrentTags) do
             local l_Tag = KillConfirmedTag(l_TagInstance)
-            if l_Tag.m_Position == nil then
+            local l_Pos = l_Tag:GetPosition()
+            if l_Pos == nil then
                 print("Position is nil")
+                goto int_continue
             end
 
-            if IsPlayerInBounds(l_Player, l_Tag.m_Position, self.m_BoxSize) == false then
+            if IsPlayerInBounds(l_Player, l_Pos.x, l_Pos.y, l_Pos.z, self.m_BoxSize) == false then
                 goto int_continue
             end
 

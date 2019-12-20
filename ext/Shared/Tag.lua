@@ -2,9 +2,9 @@ class "KillConfirmedTag"
 
 -- KillConfirmedTag(Vec3 position, TeamId teamId, number Identifier, effect handle)
 function KillConfirmedTag:__init(position, teamId, identifier, effect)
-    self.m_Position = Vec3(position)
-    self.m_TeamId = TeamId(teamId)
-    self.m_Identifier = identifer
+    self.m_Position = position
+    self.m_TeamId = teamId
+    self.m_Identifier = identifier
     self.m_Effect = effect
 end
 
