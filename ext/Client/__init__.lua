@@ -27,6 +27,12 @@ function KillConfirmedClient:__init()
 
     self.m_EnemyFire = nil
 
+    self.m_ClonedFireEmitterTemplateData = nil
+
+    self.m_ClonedFireEmitterDocument = nil
+
+    self.m_ClonedFireEffectBlueprint = nil
+
     -- Manual override for disabling effects
     self.m_DisableEffects = false
 
@@ -52,23 +58,89 @@ function KillConfirmedClient:CreateEffect()
         return true
     end
 
-    -- Get Smoke FX/Ambient/Generic/FireSmoke/Smoke/SmokePillars/Generic/FX_Crater_Smoke_01_M
-    local s_SmokeEffect = ResourceManager:SearchForInstanceByGUID(Guid('A5A43C6D-A713-4C19-8C24-F64BC740EF5F'))
-    if s_SmokeEffect == nil then
-        print("Could not get smoke effect")
-        return false
-    end
-
-    self.m_FriendlySmoke = EffectBlueprint(s_SmokeEffect)
-
     -- Get the EffectBlueprint FX/Ambient/Generic/FireSmoke/Fire/FX_Prop_OilDrumFire_01
-    local s_FireEffect = ResourceManager:SearchForInstanceByGUID(Guid('64D3EA22-1B96-4374-BAEB-39AC2FF641FC'))
-    if s_FireEffect == nil then
-        print("Could not find fire effect")
+    local s_FireEffectBlueprint = EffectBlueprint(ResourceManager:SearchForInstanceByGUID(Guid('64D3EA22-1B96-4374-BAEB-39AC2FF641FC')))
+    if s_FireEffectBlueprint == nil then
+        print("could not find fire effect blueprint")
         return false
     end
 
-    self.m_EnemyFire = EffectBlueprint(s_FireEffect)
+    -- First we need to clone the object that will be pointed to by the cloned fire effect
+    local s_FireEffectEntityData = EffectEntityData(s_FireEffectBlueprint.object) --ResourceManager:SearchForInstanceByGUID(Guid('068E2B44-4D6D-4A2C-92E9-6D1D433EB8EE'))
+    if s_FireEffectEntityData == nil then
+        print("could not find fire effect entity data")
+        return false
+    end
+
+    -- Get the emitter document for the emitter entity data
+    -- EmitterDocument fx/ambient/generic/firesmoke/fire/vertical/emitter_s/em_amb_generic_fire_vertical_s_01/51CD26B2-3E01-481A-BF4A-40B0D7806D07
+    local s_FireEmitterDocument = EmitterDocument(ResourceManager:SearchForInstanceByGUID(Guid('51CD26B2-3E01-481A-BF4A-40B0D7806D07')))
+    if s_FireEmitterDocument == nil then
+        print("could not find the fire emitter document")
+        return false
+    end
+
+    local s_FireEmitterTemplateData = EmitterTemplateData(s_FireEmitterDocument.templateData)
+    if s_FireEmitterTemplateData == nil then
+        print("could not get fire emitter template data")
+        return false
+    end
+
+    -- First clone the fire emitter template data, as that is where we change the colors and shit
+    self.m_ClonedFireEmitterTemplateData = EmitterTemplateData(s_FireEmitterTemplateData:Clone())
+    if self.m_ClonedFireEmitterTemplateData == nil then
+        print("could not clone the fire emitter template data")
+        return false
+    end
+
+    -- Change the radius and color to blue
+    self.m_ClonedFireEmitterTemplateData.pointLightRadius = 6.0
+    self.m_ClonedFireEmitterTemplateData.pointLightColor = Vec3(0.0, 0.0, 10.0) -- r, g, b
+
+    -- Clone the emitter document
+    self.m_ClonedFireEmitterDocument = EmitterDocument(s_FireEmitterDocument:Clone())
+    if self.m_ClonedFireEmitterDocument == nil then
+        print("could not clone the fire emitter document")
+        return false
+    end
+
+    -- Change our target template data to the cloned one
+    self.m_ClonedFireEmitterDocument.templateData = s_ClonedFireEmitterTemplateData
+
+    self.m_ClonedFireEffectEntityData = EffectEntityData(s_FireEffectEntityData:Clone())
+    if self.m_ClonedFireEffectEntityData == nil then
+        print("could not clone the fire effect entity data")
+        return false
+    end
+
+
+    for index, component in ipairs(self.m_ClonedFireEffectEntityData.components) do
+        l_Component = EffectEntityData(component)
+        if l_Component.typeInfo.name ~= "EmitterEntityData" then
+            goto component_continue
+        end
+
+        l_EmitterEntityData = EmitterEntityData(l_Component)
+        l_EmitterEntityData:MakeWritable()
+
+        l_EmitterEntityData.emitter = self.m_ClonedFireEmitterDocument
+
+        ::component_continue::
+    end
+
+    self.m_ClonedFireEffectBlueprint = EffectBlueprint(s_FireEffectBlueprint:Clone())
+    if self.m_ClonedFireEffectBlueprint == nil then
+        print("could not clone fire effect blueprint")
+        return false
+    end
+
+    self.m_FriendlySmoke = self.m_ClonedFireEffectBlueprint
+    self.m_EnemyFire = s_FireEffectBlueprint
+    -- TODO: Need to clone this, and any references that we need to manipulate
+    -- This involves modifying:
+    -- https://github.com/Powback/Venice-EBX/blob/071473993867cd2297dc662517c61edaff51e8fe/FX/Ambient/Generic/FireSmoke/Fire/Vertical/Emitter_S/Em_Amb_Generic_LowEnd_Fire_Vertical_S_01.txt#L21
+    -- https://github.com/Powback/Venice-EBX/blob/071473993867cd2297dc662517c61edaff51e8fe/FX/Ambient/Generic/FireSmoke/Fire/Vertical/Emitter_S/Em_Amb_Generic_LowEnd_Fire_Vertical_S_01.txt#L14
+    -- https://github.com/Powback/Venice-EBX/blob/071473993867cd2297dc662517c61edaff51e8fe/FX/Ambient/Generic/FireSmoke/Fire/Vertical/FX_Amb_Generic_Fire_Vertical_S_01.txt#L1
 
     return true
 end
