@@ -16,7 +16,7 @@ function KillConfirmedServer:__init()
     self.m_UpdateFreq = 0.15
 
     -- Box size in game units
-    self.m_BoxSize = 1.5
+    self.m_BoxSize = 2.0
 
     -- Array of tags
     self.m_CurrentTags = { }
