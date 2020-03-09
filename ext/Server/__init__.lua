@@ -25,6 +25,8 @@ function KillConfirmedServer:__init()
 end
 
 function KillConfirmedServer:OnPlayerKilled(player, inflictor, position, weapon, roadkill, headshot, victimInReviveState)
+    --print(string.format("roadkill: %s headshot: %s victiminReviveState nil: %s", tostring(roadkill), tostring(headshot), tostring(victimInReviveState == nil)))
+
     -- Check that we have a valid player
     if player == nil then
         return
